@@ -4,22 +4,28 @@
 
 #include <LiquidCrystal.h>
 
+// Configuração do LCD
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 
+// Pinos dos botões de navegação
 #define BTN_UP 10
 #define BTN_DOWN 9
 #define BTN_SELECT 7
 
-int menuPos = 1;
-int lives = 3;
+// Variáveis do menu
+int menuPos = 1;       // Posição atual no menu (1-4)
+int lives = 3;         // Contador de vidas
 
 void setup() {
+  // Inicializa o LCD
   lcd.begin(16, 2);
   
+  // Configura os botões como entrada com pullup interno
   pinMode(BTN_UP, INPUT_PULLUP);
   pinMode(BTN_DOWN, INPUT_PULLUP);
   pinMode(BTN_SELECT, INPUT_PULLUP);
   
+  // Mostra o menu inicial
   updateDisplay();
 }
 
@@ -29,7 +35,7 @@ void loop() {
     if (menuPos > 1) {
       menuPos--;
       updateDisplay();
-      delay(200);
+      delay(200); // Debounce
     }
   }
   
@@ -38,7 +44,7 @@ void loop() {
     if (menuPos < 4) {
       menuPos++;
       updateDisplay();
-      delay(200);
+      delay(200); // Debounce
     }
   }
   
@@ -50,18 +56,24 @@ void loop() {
     lcd.print(menuPos);
     lcd.print(" selecionada!");
     
+    // Aqui você pode chamar a função para tocar a música
+    // playMusic(menuPos);
+    
+    delay(2000); // Mostra a mensagem por 2 segundos
     updateDisplay(); // Volta ao menu
-    delay(200);
+    delay(200); // Debounce
   }
 }
 
 void updateDisplay() {
   lcd.clear();
   
+  // Mostra as vidas no canto superior direito
   lcd.setCursor(13, 0);
   lcd.print("V:");
   lcd.print(lives);
   
+  // Título do menu
   lcd.setCursor(0, 0);
   lcd.print("Selecione:");
   
@@ -78,6 +90,7 @@ void updateDisplay() {
       lcd.print(" ");
     }
     
+    // Espaço entre opções
     if (i < 4) lcd.print(" ");
   }
 }

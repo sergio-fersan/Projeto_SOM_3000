@@ -1,0 +1,83 @@
+// controle basico de seleção de musicas
+// as musicas nao foram implementadas, mas o sistema de selecionar já funciona
+// mostra também um sistema de vidas
+
+#include <LiquidCrystal.h>
+
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+
+#define BTN_UP 10
+#define BTN_DOWN 9
+#define BTN_SELECT 7
+
+int menuPos = 1;
+int lives = 3;
+
+void setup() {
+  lcd.begin(16, 2);
+  
+  pinMode(BTN_UP, INPUT_PULLUP);
+  pinMode(BTN_DOWN, INPUT_PULLUP);
+  pinMode(BTN_SELECT, INPUT_PULLUP);
+  
+  updateDisplay();
+}
+
+void loop() {
+  // Navegação para cima
+  if (digitalRead(BTN_UP) == LOW) {
+    if (menuPos > 1) {
+      menuPos--;
+      updateDisplay();
+      delay(200);
+    }
+  }
+  
+  // Navegação para baixo
+  if (digitalRead(BTN_DOWN) == LOW) {
+    if (menuPos < 4) {
+      menuPos++;
+      updateDisplay();
+      delay(200);
+    }
+  }
+  
+  // Seleção de música
+  if (digitalRead(BTN_SELECT) == LOW) {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Musica ");
+    lcd.print(menuPos);
+    lcd.print(" selecionada!");
+    
+    updateDisplay(); // Volta ao menu
+    delay(200);
+  }
+}
+
+void updateDisplay() {
+  lcd.clear();
+  
+  lcd.setCursor(13, 0);
+  lcd.print("V:");
+  lcd.print(lives);
+  
+  lcd.setCursor(0, 0);
+  lcd.print("Selecione:");
+  
+  // Opções do menu na segunda linha
+  lcd.setCursor(0, 1);
+  for (int i = 1; i <= 4; i++) {
+    if (i == menuPos) {
+      lcd.print("[");  // Destaca a opção selecionada
+      lcd.print(i);
+      lcd.print("]");
+    } else {
+      lcd.print(" ");
+      lcd.print(i);
+      lcd.print(" ");
+    }
+    
+    if (i < 4) lcd.print(" ");
+  }
+}

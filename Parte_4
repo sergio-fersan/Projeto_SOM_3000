@@ -1,0 +1,210 @@
+//ADD as 5 músicas ao projeto, mas ainda falta incluir os LEDs.
+
+#include <LiquidCrystal.h>
+
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+
+#define BTN_UP 10
+#define BTN_DOWN 9
+#define BTN_SELECT 7
+#define buzzer 13
+#define vrm 10
+#define azl 9
+#define vrd 8
+#define amr 7
+
+#define DO 261
+#define RE 295
+#define MI 329
+#define FA 349
+#define SOL 392
+
+int menuPos = 1;
+int lives = 3;
+int sequence[5];
+int userSequence[5];
+int currentNote = 0;
+
+void setup() {
+  lcd.begin(16, 2);
+  
+  pinMode(BTN_UP, INPUT_PULLUP);
+  pinMode(BTN_DOWN, INPUT_PULLUP);
+  pinMode(BTN_SELECT, INPUT_PULLUP);
+  pinMode(vrm, INPUT_PULLUP);
+  pinMode(azl, INPUT_PULLUP);
+  pinMode(vrd, INPUT_PULLUP);
+  pinMode(amr, INPUT_PULLUP);
+  
+  updateDisplay();
+}
+
+void loop() {
+  if (digitalRead(BTN_UP) == LOW) {
+    if (menuPos > 1) {
+      menuPos--;
+      updateDisplay();
+      delay(200);
+    }
+  }
+  
+  if (digitalRead(BTN_DOWN) == LOW) {
+    if (menuPos < 5) {
+      menuPos++;
+      updateDisplay();
+      delay(200);
+    }
+  }
+  
+  if (digitalRead(BTN_SELECT) == LOW) {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Musica ");
+    lcd.print(menuPos);
+    
+    playMusic(menuPos);
+    generateSequence(menuPos);
+    
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Repita a");
+    lcd.setCursor(0, 1);
+    lcd.print("sequencia!");
+    delay(2000);
+    
+    waitForPlayer();
+    
+    if (checkAnswer()) {
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("Parabens!");
+      lcd.setCursor(0, 1);
+      lcd.print("Acertou!");
+    } else {
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("Errou!");
+      lcd.setCursor(0, 1);
+      lcd.print("Tente novamente!");
+      lives--;
+    }
+    
+    delay(2000);
+    updateDisplay();
+    delay(200);
+  }
+}
+
+void playMusic(int musicNumber) {
+  switch(musicNumber) {
+    case 1:
+      tone(buzzer, DO, 200); delay(300);
+      tone(buzzer, RE, 200); delay(300);
+      tone(buzzer, MI, 200); delay(300);
+      tone(buzzer, FA, 200); delay(300);
+      tone(buzzer, FA, 200); delay(300);
+      break;
+      
+    case 2:
+      tone(buzzer, MI, 200); delay(300);
+      tone(buzzer, MI, 200); delay(300);
+      tone(buzzer, FA, 200); delay(300);
+      tone(buzzer, DO, 200); delay(300);
+      tone(buzzer, RE, 200); delay(300);
+      break;
+      
+    case 3:
+      tone(buzzer, DO, 200); delay(300);
+      tone(buzzer, DO, 200); delay(300);
+      tone(buzzer, RE, 200); delay(300);
+      tone(buzzer, MI, 200); delay(300);
+      tone(buzzer, FA, 200); delay(300);
+      break;
+      
+    case 4:
+      tone(buzzer, FA, 150); delay(250);
+      tone(buzzer, MI, 150); delay(250);
+      tone(buzzer, RE, 150); delay(250);
+      tone(buzzer, DO, 150); delay(250);
+      tone(buzzer, FA, 150); delay(250);
+      break;
+      
+    case 5:
+      tone(buzzer, DO, 200); delay(300);
+      tone(buzzer, RE, 200); delay(300);
+      tone(buzzer, MI, 200); delay(300);
+      tone(buzzer, SOL, 200); delay(300);
+      tone(buzzer, FA, 200); delay(300);
+      break;
+  }
+}
+
+void generateSequence(int musicNumber) {
+  randomSeed(analogRead(0));
+  
+  for (int i = 0; i < 5; i++) {
+    sequence[i] = random(1, 6);
+  }
+}
+
+void waitForPlayer() {
+  currentNote = 0;
+  
+  while (currentNote < 5) {
+    if (digitalRead(vrm) == LOW) {
+      tone(buzzer, DO, 200);
+      userSequence[currentNote] = 1;
+      currentNote++;
+      delay(300);
+    }
+    else if (digitalRead(azl) == LOW) {
+      tone(buzzer, RE, 200);
+      userSequence[currentNote] = 2;
+      currentNote++;
+      delay(300);
+    }
+    else if (digitalRead(vrd) == LOW) {
+      tone(buzzer, MI, 200);
+      userSequence[currentNote] = 3;
+      currentNote++;
+      delay(300);
+    }
+    else if (digitalRead(amr) == LOW) {
+      tone(buzzer, FA, 200);
+      userSequence[currentNote] = 4;
+      currentNote++;
+      delay(300);
+    }
+  }
+}
+
+bool checkAnswer() {
+  for (int i = 0; i < 5; i++) {
+    if (sequence[i] != userSequence[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+void updateDisplay() {
+  lcd.clear();
+  lcd.setCursor(13, 0);
+  lcd.print("V:");
+  lcd.print(lives);
+  lcd.setCursor(0, 0);
+  lcd.print("Selecione:");
+  lcd.setCursor(0, 1);
+  
+  for (int i = 1; i <= 5; i++) {
+    if (i == menuPos) {
+      lcd.print("[");
+      lcd.print(i);
+      lcd.print("]");
+    } else {
+      lcd.print(" ");
+      lcd.print(i);
+      lcd.print(" ");
+    }
+  }
+}

@@ -1,0 +1,414 @@
+#include <LiquidCrystal.h>
+
+
+// Configuração do LCD
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+
+// Pinos dos botões de navegação
+#define BTN_UP 10
+#define BTN_DOWN 9
+#define BTN_SELECT 7
+
+// Botões das notas
+#define buzzer 13
+#define vrm 10  // Botão 1 (Vermelho)
+#define azl 9   // Botão 2 (Azul)
+#define vrd 8   // Botão 3 (Verde)
+#define amr 7   // Botão 4 (Amarelo)
+
+// LEDs dos botões (acendem com a música)
+#define LED_BTN1 A0
+#define LED_BTN2 A1
+#define LED_BTN3 A2
+#define LED_BTN4 A3
+
+// LEDs de feedback
+#define LED_ERRO A4
+#define LED_ACERTO A5
+
+//notas dos botoes
+#define DO 261
+#define RE 295
+#define MI 329
+#define FA 349
+
+// Variáveis do menu
+int menuPos = 1;       // Posição atual no menu (1-5)
+int lives = 3;         // Contador de vidas
+
+// Variáveis do jogo
+int maxSequenceLength = 5;  // Começa com 5 notas
+int sequence[15];           // Armazena a sequência atual (até 15 notas)
+int userSequence[15];       // Armazena a sequência do jogador
+int currentNote = 0;        // Controla a nota atual
+int currentLevel = 1;       // Nível atual (1-5 correspondendo a 5,7,9,12,15 notas)
+
+void setup() {
+  // Inicializa o LCD
+  lcd.begin(16, 2);
+  
+  // Configura os botões como entrada com pullup interno
+  pinMode(BTN_UP, INPUT_PULLUP);
+  pinMode(BTN_DOWN, INPUT_PULLUP);
+  pinMode(BTN_SELECT, INPUT_PULLUP);
+  
+  // Configura os botões das notas
+  pinMode(vrm, INPUT_PULLUP);
+  pinMode(azl, INPUT_PULLUP);
+  pinMode(vrd, INPUT_PULLUP);
+  pinMode(amr, INPUT_PULLUP);
+  
+  // Configura os LEDs
+  pinMode(LED_BTN1, OUTPUT);
+  pinMode(LED_BTN2, OUTPUT);
+  pinMode(LED_BTN3, OUTPUT);
+  pinMode(LED_BTN4, OUTPUT);
+  pinMode(LED_ERRO, OUTPUT);
+  pinMode(LED_ACERTO, OUTPUT);
+  
+  // Desliga todos os LEDs inicialmente
+  digitalWrite(LED_BTN1, LOW);
+  digitalWrite(LED_BTN2, LOW);
+  digitalWrite(LED_BTN3, LOW);
+  digitalWrite(LED_BTN4, LOW);
+  digitalWrite(LED_ERRO, LOW);
+  digitalWrite(LED_ACERTO, LOW);
+  
+  // Mostra o menu inicial
+  updateDisplay();
+}
+
+void loop() {
+  // Navegação para cima
+  if (digitalRead(BTN_UP) == LOW) {
+    if (menuPos > 1) {
+      menuPos--;
+      updateDisplay();
+      delay(200); // Debounce
+    }
+  }
+  
+  // Navegação para baixo
+  if (digitalRead(BTN_DOWN) == LOW) {
+    if (menuPos < 5) {  // Agora temos 5 músicas
+      menuPos++;
+      updateDisplay();
+      delay(200); // Debounce
+    }
+  }
+  
+  // Seleção de música
+if (digitalRead(BTN_SELECT) == LOW) {
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Musica ");
+  lcd.print(menuPos);
+  
+  // Toca a música selecionada
+  playMusic(menuPos);
+  
+  // Gera a sequência aleatória para o jogador repetir
+  generateSequence(menuPos);
+  
+  // Mostra mensagem para o jogador repetir
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Repita a");
+  lcd.setCursor(0, 1);
+  lcd.print("sequencia!");
+  delay(250);
+  
+  // Aguarda a resposta do jogador
+  waitForPlayer();
+  
+  // Se o jogador completou toda a sequência corretamente
+  if (currentNote == maxSequenceLength && currentLevel == 5) {
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Parabens!");
+  lcd.setCursor(0, 1);
+  lcd.print("Musica completa!");
+  digitalWrite(LED_ACERTO, HIGH);
+  delay(2000);
+  digitalWrite(LED_ACERTO, LOW);
+  
+  // Reinicia o jogo
+  currentLevel = 1;
+  maxSequenceLength = 5;
+}
+  
+  delay(2000); // Mostra a mensagem por 2 segundos
+  updateDisplay(); // Volta ao menu
+  delay(200); // Debounce
+}
+}
+
+void playMusic(int musicNumber) {
+  switch(musicNumber) {
+    case 1:
+      // Música 1: Sequência simples
+    if(currentLevel == 1){
+      playNote(DO, LED_BTN1, 50); delay(100);
+      playNote(RE, LED_BTN2, 50); delay(100);
+      playNote(MI, LED_BTN3, 50); delay(100);
+      playNote(FA, LED_BTN4, 50); delay(100);
+      playNote(FA, LED_BTN4, 50); delay(100);
+    } else if(currentLevel == 2){
+      playNote(DO, LED_BTN1, 50); delay(100);
+      playNote(RE, LED_BTN2, 50); delay(100);
+      playNote(MI, LED_BTN3, 50); delay(100);
+      playNote(FA, LED_BTN4, 50); delay(100);
+      playNote(FA, LED_BTN4, 50); delay(100);
+      playNote(MI, LED_BTN3, 50); delay(100);
+      playNote(RE, LED_BTN2, 50); delay(100);
+    }
+      break;
+      
+    case 2:
+      // Música 2: Padrão diferente
+      playNote(MI, LED_BTN3, 200); delay(300);
+      playNote(MI, LED_BTN3, 200); delay(300);
+      playNote(FA, LED_BTN4, 200); delay(300);
+      playNote(DO, LED_BTN1, 200); delay(300);
+      playNote(RE, LED_BTN2, 200); delay(300);
+      break;
+      
+    case 3:
+      // Música 3: Outro padrão
+      playNote(DO, LED_BTN1, 200); delay(300);
+      playNote(DO, LED_BTN1, 200); delay(300);
+      playNote(RE, LED_BTN2, 200); delay(300);
+      playNote(MI, LED_BTN3, 200); delay(300);
+      playNote(FA, LED_BTN4, 200); delay(300);
+      break;
+      
+    case 4:
+      // Música 4: Padrão mais complexo
+      playNote(FA, LED_BTN4, 150); delay(250);
+      playNote(MI, LED_BTN3, 150); delay(250);
+      playNote(RE, LED_BTN2, 150); delay(250);
+      playNote(DO, LED_BTN1, 150); delay(250);
+      playNote(FA, LED_BTN4, 150); delay(250);
+      break;
+      
+    case 5:
+      // Música 5: Nova música (pequena melodia)
+      playNote(DO, LED_BTN1, 150); delay(200);
+      playNote(MI, LED_BTN3, 150); delay(200);
+      playNote(RE, LED_BTN2, 150); delay(200);
+      playNote(FA, LED_BTN4, 300); delay(400);
+      playNote(DO, LED_BTN1, 150); delay(200);
+      break;
+  }
+}
+
+// Função auxiliar para tocar nota e acender LED correspondente
+void playNote(int note, int ledPin, int duration) {
+  tone(buzzer, note, duration);
+  digitalWrite(ledPin, HIGH);
+  delay(duration);
+  digitalWrite(ledPin, LOW);
+}
+
+void generateSequence(int musicNumber) {
+  // Sequências completas para cada música (5,7,9,12,15 notas)
+  switch(musicNumber) {
+    case 1: 
+      // Sequência para música 1
+      sequence[0]=1; sequence[1]=2; sequence[2]=3; sequence[3]=4; sequence[4]=4; // 5 notas
+      sequence[5]=3; sequence[6]=2;                                              // +2 = 7
+      sequence[7]=1; sequence[8]=1;                                              // +2 = 9
+      sequence[9]=2; sequence[10]=3; sequence[11]=4;                             // +3 = 12
+      sequence[12]=1; sequence[13]=2; sequence[14]=3;                            // +3 = 15
+      break;
+    case 2: 
+      sequence[0]=3; sequence[1]=3; sequence[2]=4; sequence[3]=1; sequence[4]=2; 
+      sequence[5]=1; sequence[6]=4; 
+      sequence[7]=3; sequence[8]=2; 
+      sequence[9]=1; sequence[10]=4; sequence[11]=3; 
+      sequence[12]=2; sequence[13]=1; sequence[14]=4; 
+      break;
+    case 3: 
+      sequence[0]=1; sequence[1]=1; sequence[2]=2; sequence[3]=3; sequence[4]=4; 
+      sequence[5]=4; sequence[6]=3; 
+      sequence[7]=2; sequence[8]=1; 
+      sequence[9]=1; sequence[10]=2; sequence[11]=3; 
+      sequence[12]=4; sequence[13]=3; sequence[14]=2; 
+      break;
+    case 4: 
+      sequence[0]=4; sequence[1]=3; sequence[2]=2; sequence[3]=1; sequence[4]=4; 
+      sequence[5]=1; sequence[6]=2; 
+      sequence[7]=3; sequence[8]=4; 
+      sequence[9]=1; sequence[10]=2; sequence[11]=3; 
+      sequence[12]=4; sequence[13]=3; sequence[14]=2; 
+      break;
+    case 5: 
+      sequence[0]=1; sequence[1]=3; sequence[2]=2; sequence[3]=4; sequence[4]=1; 
+      sequence[5]=3; sequence[6]=2; 
+      sequence[7]=4; sequence[8]=1; 
+      sequence[9]=3; sequence[10]=2; sequence[11]=4; 
+      sequence[12]=1; sequence[13]=3; sequence[14]=2; 
+      break;
+  }
+}
+
+void waitForPlayer() {
+  currentNote = 0;
+  
+  while (currentNote < maxSequenceLength && lives > 0) {
+    if (digitalRead(vrm) == LOW) {
+      playNote(DO, LED_BTN1, 50);
+      if (sequence[currentNote] != 1) {
+        wrongButtonPressed();
+        break;
+      }
+      userSequence[currentNote] = 1;
+      currentNote++;
+      delay(100);
+    }
+    else if (digitalRead(azl) == LOW) {
+      playNote(RE, LED_BTN2, 50);
+      if (sequence[currentNote] != 2) {
+        wrongButtonPressed();
+        break;
+      }
+      userSequence[currentNote] = 2;
+      currentNote++;
+      delay(100);
+    }
+    else if (digitalRead(vrd) == LOW) {
+      playNote(MI, LED_BTN3, 50);
+      if (sequence[currentNote] != 3) {
+        wrongButtonPressed();
+        break;
+      }
+      userSequence[currentNote] = 3;
+      currentNote++;
+      delay(100);
+    }
+    else if (digitalRead(amr) == LOW) {
+      playNote(FA, LED_BTN4, 50);
+      if (sequence[currentNote] != 4) {
+        wrongButtonPressed();
+        break;
+      }
+      userSequence[currentNote] = 4;
+      currentNote++;
+      delay(100);
+    }
+  }
+
+  // Se completou a sequência atual
+  if (currentNote == maxSequenceLength) {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Acertou!");
+    
+    // Avança para o próximo nível
+    currentLevel++;
+    
+    // Define o tamanho da próxima sequência
+    switch(currentLevel) {
+      case 2: maxSequenceLength = 7; break;
+      case 3: maxSequenceLength = 9; break;
+      case 4: maxSequenceLength = 12; break;
+      case 5: maxSequenceLength = 15; break;
+      default: 
+        // Se completou todos os níveis, reinicia
+        lcd.setCursor(0, 1);
+        lcd.print("Musica completa!");
+        delay(2000);
+        currentLevel = 1;
+        maxSequenceLength = 5;
+        updateDisplay();
+        return;
+    }
+    
+    lcd.setCursor(0, 1);
+    lcd.print("Proximo nivel!");
+    digitalWrite(LED_ACERTO, HIGH);
+    delay(2000);
+    digitalWrite(LED_ACERTO, LOW);
+    
+    // Prepara para a próxima rodada
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Nivel ");
+    lcd.print(currentLevel);
+    lcd.setCursor(0, 1);
+    lcd.print("Notas: ");
+    lcd.print(maxSequenceLength);
+    delay(1500);
+    
+    // Toca a nova sequência
+    playMusic(menuPos);
+    
+    // Reinicia para o jogador repetir
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Repita a");
+    lcd.setCursor(0, 1);
+    lcd.print("sequencia!");
+    delay(500);
+    
+    // Reinicia a contagem
+    currentNote = 0;
+    waitForPlayer();
+  }
+}
+
+void wrongButtonPressed() {
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Errou!");
+  lcd.setCursor(0, 1);
+  lcd.print("Tente novamente!");
+  
+  // Acende LED de erro
+  digitalWrite(LED_ERRO, HIGH);
+  lives--;
+  
+  // Toca som de erro
+  tone(buzzer, 100, 500);
+  delay(1000);
+  digitalWrite(LED_ERRO, LOW);
+}
+
+bool checkAnswer() {
+  for (int i = 0; i < 5; i++) {
+    if (sequence[i] != userSequence[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+void updateDisplay() {
+  lcd.clear();
+  
+  // Mostra as vidas no canto superior direito
+  lcd.setCursor(13, 0);
+  lcd.print("V:");
+  lcd.print(lives);
+  
+  // Título do menu
+  lcd.setCursor(0, 0);
+  lcd.print("Selecione:");
+  
+  // Opções do menu na segunda linha
+  lcd.setCursor(0, 1);
+  for (int i = 1; i <= 5; i++) {  // Agora temos 5 opções
+    if (i == menuPos) {
+      lcd.print("[");  // Destaca a opção selecionada
+      lcd.print(i);
+      lcd.print("]");
+    } else {
+      lcd.print(" ");
+      lcd.print(i);
+      lcd.print(" ");
+    }
+    
+    // Espaço entre opções
+    if (i < 5) lcd.print("");
+  }
+}

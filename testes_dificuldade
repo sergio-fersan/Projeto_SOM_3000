@@ -163,14 +163,24 @@ void playMusic(int musicNumber) {
       playNote(RE, LED_BTN2, 50); delay(100);
     }
       break;
-      
+      //33412
     case 2:
       // Música 2: Padrão diferente
-      playNote(MI, LED_BTN3, 200); delay(300);
-      playNote(MI, LED_BTN3, 200); delay(300);
-      playNote(FA, LED_BTN4, 200); delay(300);
-      playNote(DO, LED_BTN1, 200); delay(300);
-      playNote(RE, LED_BTN2, 200); delay(300);
+      if(currentLevel == 1){
+      playNote(MI, LED_BTN3, 50); delay(100);
+	  playNote(MI, LED_BTN3, 50); delay(100);
+	  playNote(FA, LED_BTN4, 50); delay(100);
+	  playNote(DO, LED_BTN1, 50); delay(100);
+	  playNote(RE, LED_BTN2, 50); delay(100);
+    } else if(currentLevel == 2){
+      playNote(MI, LED_BTN3, 50); delay(100);
+	  playNote(MI, LED_BTN3, 50); delay(100);
+	  playNote(FA, LED_BTN4, 50); delay(100);
+	  playNote(DO, LED_BTN1, 50); delay(100);
+	  playNote(RE, LED_BTN2, 50); delay(100);
+	  playNote(DO, LED_BTN1, 50); delay(100);
+	  playNote(FA, LED_BTN4, 50); delay(100);
+    }
       break;
       
     case 3:
@@ -327,7 +337,7 @@ void waitForPlayer() {
     lcd.setCursor(0, 1);
     lcd.print("Proximo nivel!");
     digitalWrite(LED_ACERTO, HIGH);
-    delay(2000);
+    delay(500);
     digitalWrite(LED_ACERTO, LOW);
     
     // Prepara para a próxima rodada
@@ -338,7 +348,7 @@ void waitForPlayer() {
     lcd.setCursor(0, 1);
     lcd.print("Notas: ");
     lcd.print(maxSequenceLength);
-    delay(1500);
+    delay(500);
     
     // Toca a nova sequência
     playMusic(menuPos);
@@ -370,7 +380,7 @@ void wrongButtonPressed() {
   
   // Toca som de erro
   tone(buzzer, 100, 500);
-  delay(1000);
+  delay(500);
   digitalWrite(LED_ERRO, LOW);
 }
 

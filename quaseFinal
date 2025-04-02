@@ -1,0 +1,629 @@
+#include <LiquidCrystal.h>
+
+
+// Configuração do LCD
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+
+// Pinos dos botões de navegação
+#define btCima 10
+#define btBaixo 9
+#define btSlc 7
+
+// Botões das notas
+#define buzzer 13
+#define vrm 10  // Botão 1 (Vermelho)
+#define azl 9   // Botão 2 (Azul)
+#define vrd 8   // Botão 3 (Verde)
+#define amr 7   // Botão 4 (Amarelo)
+
+// LEDs dos botões (acendem com a música)
+#define ledBt1 A0
+#define ledBt2 A1
+#define ledBt3 A2
+#define ledBt4 A3
+
+// LEDs de feedback
+#define ledErro A4
+#define ledAcerto A5
+
+//notas dos botoes
+#define DO 261
+#define RE 295
+#define MI 329
+#define FA 349
+
+// Variáveis do menu
+int menuPos = 1;       // Posição atual no menu (1-5)
+int vidas = 3;         // Contador de vidas
+
+// Variáveis do jogo
+int maxCompSeq = 5;  // Começa com 5 notas
+int seq[15];           // Armazena a sequência atual (até 15 notas)
+int seqJog[15];       // Armazena a sequência do jogador
+int notaAtual = 0;        // Controla a nota atual
+int nivel = 1;       // Nível atual (1-5 correspondendo a 5,7,9,12,15 notas)
+
+void setup() {
+  // Inicializa o LCD
+  lcd.begin(16, 2);
+  
+  // Configura os botões como entrada com pullup interno
+  pinMode(btCima, INPUT_PULLUP);
+  pinMode(btBaixo, INPUT_PULLUP);
+  pinMode(btSlc, INPUT_PULLUP);
+  
+  // Configura os botões das notas
+  pinMode(vrm, INPUT_PULLUP);
+  pinMode(azl, INPUT_PULLUP);
+  pinMode(vrd, INPUT_PULLUP);
+  pinMode(amr, INPUT_PULLUP);
+  
+  // Configura os LEDs
+  pinMode(ledBt1, OUTPUT);
+  pinMode(ledBt2, OUTPUT);
+  pinMode(ledBt3, OUTPUT);
+  pinMode(ledBt4, OUTPUT);
+  pinMode(ledErro, OUTPUT);
+  pinMode(ledAcerto, OUTPUT);
+  
+  // Desliga todos os LEDs inicialmente
+  digitalWrite(ledBt1, LOW);
+  digitalWrite(ledBt2, LOW);
+  digitalWrite(ledBt3, LOW);
+  digitalWrite(ledBt4, LOW);
+  digitalWrite(ledErro, LOW);
+  digitalWrite(ledAcerto, LOW);
+  
+  // Mostra informações dos integrantes
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Sergio S.Santos");
+  lcd.setCursor(0, 1);
+  lcd.print("RA 22.124.082-3");
+  delay(500); // Mostra por 3 segundos
+  
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Gabriel Machado");
+  lcd.setCursor(0, 1);
+  lcd.print("RA 22.123.005-5");
+  delay(500); // Mostra por 3 segundos
+  
+  // Mostra o menu inicial
+  telaInicio();
+}
+
+void loop() {
+  // Navegação para cima
+  if (digitalRead(btCima) == LOW) {
+    if (menuPos > 1) {
+      menuPos--;
+      telaInicio();
+      delay(200); // Debounce
+    }
+  }
+  
+  // Navegação para baixo
+  if (digitalRead(btBaixo) == LOW) {
+    if (menuPos < 5) {  // Agora temos 5 músicas
+      menuPos++;
+      telaInicio();
+      delay(200); // Debounce
+    }
+  }
+  
+  // Seleção de música
+if (digitalRead(btSlc) == LOW) {
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Musica ");
+  lcd.print(menuPos);
+  
+  // Toca a música selecionada
+  tocar(menuPos);
+  
+  // Gera a sequência aleatória para o jogador repetir
+  escSeq(menuPos);
+  
+  // Mostra mensagem para o jogador repetir
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Repita a");
+  lcd.setCursor(0, 1);
+  lcd.print("sequencia!");
+  delay(100);
+  
+  // Aguarda a resposta do jogador
+  esperar();
+  
+  // Se o jogador completou toda a sequência corretamente
+  if (notaAtual == maxCompSeq && nivel == 4) {
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Parabens!");
+  lcd.setCursor(0, 1);
+  lcd.print("Musica completa!");
+  digitalWrite(ledAcerto, HIGH);
+  delay(2000);
+  digitalWrite(ledAcerto, LOW);
+  
+  // Reinicia o jogo
+  nivel = 1;
+  maxCompSeq = 5;
+}
+  
+  delay(2000); // Mostra a mensagem por 2 segundos
+  telaInicio(); // Volta ao menu
+  delay(200); // Debounce
+}
+}
+
+void tocar(int numMusica) {
+  switch(numMusica) {
+    case 1:
+      // Música 1: Sequência simples
+    if(nivel == 1){
+      tocarNota(DO, ledBt1, 50); delay(50);
+	  tocarNota(DO, ledBt1, 50); delay(50);
+      tocarNota(MI, ledBt3, 50); delay(50);
+      tocarNota(RE, ledBt2, 50); delay(50);
+      tocarNota(FA, ledBt4, 50); delay(50);
+    } else if(nivel == 2){
+      tocarNota(DO, ledBt1, 50); delay(50);
+	  tocarNota(DO, ledBt1, 50); delay(50);
+      tocarNota(MI, ledBt3, 50); delay(50);
+      tocarNota(RE, ledBt2, 50); delay(50);
+      tocarNota(FA, ledBt4, 50); delay(50);
+	  tocarNota(RE, ledBt2, 50); delay(50);
+	  tocarNota(DO, ledBt1, 50); delay(50);
+    } else if(nivel == 3){
+      tocarNota(DO, ledBt1, 50); delay(50);
+	  tocarNota(DO, ledBt1, 50); delay(50);
+      tocarNota(MI, ledBt3, 50); delay(50);
+      tocarNota(RE, ledBt2, 50); delay(50);
+      tocarNota(FA, ledBt4, 50); delay(50);
+	  tocarNota(RE, ledBt2, 50); delay(50);
+	  tocarNota(DO, ledBt1, 50); delay(50);
+	  tocarNota(DO, ledBt1, 50); delay(50);
+      tocarNota(MI, ledBt3, 50); delay(50);
+    } else if(nivel == 4){
+      tocarNota(DO, ledBt1, 50); delay(50);
+	  tocarNota(DO, ledBt1, 50); delay(50);
+      tocarNota(MI, ledBt3, 50); delay(50);
+      tocarNota(RE, ledBt2, 50); delay(50);
+      tocarNota(FA, ledBt4, 50); delay(50);
+	  tocarNota(RE, ledBt2, 50); delay(50);
+	  tocarNota(DO, ledBt1, 50); delay(50);
+	  tocarNota(DO, ledBt1, 50); delay(50);
+      tocarNota(FA, ledBt4, 50); delay(50);
+	  tocarNota(MI, ledBt3, 50); delay(50);
+	  tocarNota(RE, ledBt2, 50); delay(50);
+	  tocarNota(DO, ledBt1, 50); delay(50);
+    } 
+      break;
+    case 2:
+      // Música 2: Padrão diferente
+      if(nivel == 1){
+	  tocarNota(MI, ledBt3, 50); delay(100);
+	  tocarNota(MI, ledBt3, 50); delay(100);
+	  tocarNota(FA, ledBt4, 50); delay(100);
+	  tocarNota(DO, ledBt1, 50); delay(100);
+	  tocarNota(RE, ledBt2, 50); delay(100);
+    } else if(nivel == 2){
+      tocarNota(MI, ledBt3, 50); delay(100);
+	  tocarNota(MI, ledBt3, 50); delay(100);
+	  tocarNota(FA, ledBt4, 50); delay(100);
+	  tocarNota(DO, ledBt1, 50); delay(100);
+	  tocarNota(RE, ledBt2, 50); delay(100);
+	  tocarNota(DO, ledBt1, 50); delay(100);
+	  tocarNota(FA, ledBt4, 50); delay(100);
+    } else if(nivel == 3){
+      tocarNota(MI, ledBt3, 50); delay(100);
+	  tocarNota(MI, ledBt3, 50); delay(100);
+	  tocarNota(FA, ledBt4, 50); delay(100);
+	  tocarNota(DO, ledBt1, 50); delay(100);
+	  tocarNota(RE, ledBt2, 50); delay(100);
+	  tocarNota(DO, ledBt1, 50); delay(100);
+	  tocarNota(FA, ledBt4, 50); delay(100);
+	  tocarNota(MI, ledBt3, 50); delay(100);
+	  tocarNota(RE, ledBt2, 50); delay(100);
+    } else if(nivel == 4){
+      tocarNota(MI, ledBt3, 50); delay(100);
+	  tocarNota(MI, ledBt3, 50); delay(100);
+	  tocarNota(FA, ledBt4, 50); delay(100);
+	  tocarNota(DO, ledBt1, 50); delay(100);
+	  tocarNota(RE, ledBt2, 50); delay(100);
+	  tocarNota(DO, ledBt1, 50); delay(100);
+	  tocarNota(FA, ledBt4, 50); delay(100);
+	  tocarNota(MI, ledBt3, 50); delay(100);
+	  tocarNota(RE, ledBt2, 50); delay(100);
+	  tocarNota(RE, ledBt2, 50); delay(100);
+	  tocarNota(MI, ledBt3, 50); delay(100);
+	  tocarNota(DO, ledBt1, 50); delay(100);
+    }
+      break;
+      
+    case 3:
+      // Música 3: Outro padrão
+	  if(nivel == 1){
+      tocarNota(DO, ledBt1, 200); delay(300);
+      tocarNota(DO, ledBt1, 200); delay(300);
+      tocarNota(RE, ledBt2, 200); delay(300);
+      tocarNota(MI, ledBt3, 200); delay(300);
+      tocarNota(FA, ledBt4, 200); delay(300);
+	  } else if(nivel == 2){
+	  tocarNota(DO, ledBt1, 200); delay(300);
+      tocarNota(DO, ledBt1, 200); delay(300);
+      tocarNota(RE, ledBt2, 200); delay(300);
+      tocarNota(MI, ledBt3, 200); delay(300);
+      tocarNota(FA, ledBt4, 200); delay(300);
+	  tocarNota(RE, ledBt2, 200); delay(300);
+	  tocarNota(DO, ledBt1, 200); delay(300);
+	  } else if(nivel == 3){
+	  tocarNota(DO, ledBt1, 200); delay(300);
+      tocarNota(DO, ledBt1, 200); delay(300);
+      tocarNota(RE, ledBt2, 200); delay(300);
+      tocarNota(MI, ledBt3, 200); delay(300);
+      tocarNota(FA, ledBt4, 200); delay(300);
+	  tocarNota(RE, ledBt2, 200); delay(300);
+	  tocarNota(DO, ledBt1, 200); delay(300);
+	  tocarNota(RE, ledBt2, 200); delay(300);
+	  tocarNota(FA, ledBt4, 200); delay(300);
+	  } else if(nivel == 4){
+	  tocarNota(DO, ledBt1, 200); delay(300);
+      tocarNota(DO, ledBt1, 200); delay(300);
+      tocarNota(RE, ledBt2, 200); delay(300);
+      tocarNota(MI, ledBt3, 200); delay(300);
+      tocarNota(FA, ledBt4, 200); delay(300);
+	  tocarNota(RE, ledBt2, 200); delay(300);
+	  tocarNota(DO, ledBt1, 200); delay(300);
+	  tocarNota(RE, ledBt2, 200); delay(300);
+	  tocarNota(FA, ledBt4, 200); delay(300);
+	  tocarNota(MI, ledBt3, 200); delay(300);
+	  tocarNota(DO, ledBt1, 200); delay(300);
+	  tocarNota(RE, ledBt2, 200); delay(300);
+	  }
+      break;
+      
+    case 4:
+      // Música 4: Padrão mais complexo
+      if(nivel == 1){
+      tocarNota(DO, ledBt1, 200); delay(300);
+      tocarNota(RE, ledBt2, 200); delay(300);
+      tocarNota(MI, ledBt3, 200); delay(300);
+      tocarNota(FA, ledBt4, 200); delay(300);
+	  tocarNota(FA, ledBt4, 200); delay(300);
+	  } else if(nivel == 2){
+	  tocarNota(DO, ledBt1, 200); delay(300);
+      tocarNota(RE, ledBt2, 200); delay(300);
+      tocarNota(MI, ledBt3, 200); delay(300);
+      tocarNota(FA, ledBt4, 200); delay(300);
+	  tocarNota(FA, ledBt4, 200); delay(300);
+	  tocarNota(DO, ledBt1, 200); delay(300);
+      tocarNota(RE, ledBt2, 200); delay(300);
+	  } else if(nivel == 3){
+	  tocarNota(DO, ledBt1, 200); delay(300);
+      tocarNota(RE, ledBt2, 200); delay(300);
+      tocarNota(MI, ledBt3, 200); delay(300);
+      tocarNota(FA, ledBt4, 200); delay(300);
+	  tocarNota(FA, ledBt4, 200); delay(300);
+	  tocarNota(DO, ledBt1, 200); delay(300);
+      tocarNota(RE, ledBt2, 200); delay(300);
+      tocarNota(DO, ledBt1, 200); delay(300);
+      tocarNota(RE, ledBt2, 200); delay(300);
+	  } else if(nivel == 4){
+	  tocarNota(DO, ledBt1, 200); delay(300);
+      tocarNota(RE, ledBt2, 200); delay(300);
+      tocarNota(MI, ledBt3, 200); delay(300);
+      tocarNota(FA, ledBt4, 200); delay(300);
+	  tocarNota(FA, ledBt4, 200); delay(300);
+	  tocarNota(DO, ledBt1, 200); delay(300);
+      tocarNota(RE, ledBt2, 200); delay(300);
+      tocarNota(DO, ledBt1, 200); delay(300);
+      tocarNota(RE, ledBt2, 200); delay(300);
+	  tocarNota(MI, ledBt3, 200); delay(300);
+	  tocarNota(RE, ledBt2, 200); delay(300);
+	  tocarNota(DO, ledBt1, 200); delay(300);
+	  }
+      break;
+      
+    case 5:
+      // Música 5: Nova música (pequena melodia)
+      if(nivel == 1){
+      tocarNota(DO, ledBt1, 150); delay(200);
+      tocarNota(MI, ledBt3, 150); delay(200);
+      tocarNota(RE, ledBt2, 150); delay(200);
+      tocarNota(FA, ledBt4, 300); delay(400);
+      tocarNota(DO, ledBt1, 150); delay(200);
+	  } else if(nivel == 2){
+	  tocarNota(DO, ledBt1, 150); delay(200);
+      tocarNota(MI, ledBt3, 150); delay(200);
+      tocarNota(RE, ledBt2, 150); delay(200);
+      tocarNota(FA, ledBt4, 300); delay(400);
+      tocarNota(DO, ledBt1, 150); delay(200);
+	  tocarNota(DO, ledBt1, 150); delay(200);
+      tocarNota(MI, ledBt3, 150); delay(200);
+	  } else if(nivel == 3){
+	  tocarNota(DO, ledBt1, 150); delay(200);
+      tocarNota(MI, ledBt3, 150); delay(200);
+      tocarNota(RE, ledBt2, 150); delay(200);
+      tocarNota(FA, ledBt4, 300); delay(400);
+      tocarNota(DO, ledBt1, 150); delay(200);
+	  tocarNota(DO, ledBt1, 150); delay(200);
+      tocarNota(MI, ledBt3, 150); delay(200);
+      tocarNota(RE, ledBt2, 150); delay(200);
+      tocarNota(FA, ledBt4, 300); delay(400);
+	  } else if(nivel == 4){
+	  tocarNota(DO, ledBt1, 150); delay(200);
+      tocarNota(MI, ledBt3, 150); delay(200);
+      tocarNota(RE, ledBt2, 150); delay(200);
+      tocarNota(FA, ledBt4, 300); delay(400);
+      tocarNota(DO, ledBt1, 150); delay(200);
+	  tocarNota(DO, ledBt1, 150); delay(200);
+      tocarNota(MI, ledBt3, 150); delay(200);
+      tocarNota(RE, ledBt2, 150); delay(200);
+      tocarNota(FA, ledBt4, 300); delay(400);
+	  tocarNota(DO, ledBt1, 150); delay(200);
+      tocarNota(MI, ledBt3, 150); delay(200);
+      tocarNota(RE, ledBt2, 150); delay(200);
+	  }
+      break;
+  }
+}
+
+// Função auxiliar para tocar nota e acender LED correspondente
+void tocarNota(int nota, int pinLed, int tempo) {
+  tone(buzzer, nota, tempo);
+  digitalWrite(pinLed, HIGH);
+  delay(tempo);
+  digitalWrite(pinLed, LOW);
+}
+
+void escSeq(int numMusica) {
+  // Sequências completas para cada música (5,7,9,12,15 notas)
+  switch(numMusica) {
+    case 1:
+      // Sequência para música 1
+      seq[0]=1; seq[1]=1; seq[2]=3; seq[3]=2; seq[4]=4; // 5 notas
+      seq[5]=2; seq[6]=1;                                              // +2 = 7
+      seq[7]=1; seq[8]=4;                                              // +2 = 9
+      seq[9]=3; seq[10]=2; seq[11]=1;                             // +3 = 12
+      break;
+    case 2:
+      seq[0]=3; seq[1]=3; seq[2]=4; seq[3]=1; seq[4]=2; 
+      seq[5]=1; seq[6]=4; 
+      seq[7]=3; seq[8]=2; 
+      seq[9]=2; seq[10]=3; seq[11]=1; 
+      break;
+    case 3:
+      seq[0]=1; seq[1]=1; seq[2]=2; seq[3]=3; seq[4]=4; 
+      seq[5]=2; seq[6]=1; 
+      seq[7]=2; seq[8]=4; 
+      seq[9]=3; seq[10]=1; seq[11]=2; 
+      break;
+    case 4:
+      seq[0]=1; seq[1]=2; seq[2]=3; seq[3]=4; seq[4]=4; 
+      seq[5]=1; seq[6]=2; 
+      seq[7]=1; seq[8]=2; 
+      seq[9]=3; seq[10]=2; seq[11]=1;  
+      break;
+    case 5:
+      seq[0]=1; seq[1]=3; seq[2]=2; seq[3]=4; seq[4]=1; 
+      seq[5]=1; seq[6]=3; 
+      seq[7]=2; seq[8]=4; 
+      seq[9]=1; seq[10]=3; seq[11]=2;
+      break;
+  }
+}
+
+void esperar() {
+  notaAtual = 0;
+  
+  while (notaAtual < maxCompSeq && vidas > 0) {
+    if (digitalRead(vrm) == LOW) {
+      tocarNota(DO, ledBt1, 50);
+      if (seq[notaAtual] != 1) {
+        tocouErrado();
+        break;
+      }
+      seqJog[notaAtual] = 1;
+      notaAtual++;
+      delay(100);
+    }
+    else if (digitalRead(azl) == LOW) {
+      tocarNota(RE, ledBt2, 50);
+      if (seq[notaAtual] != 2) {
+        tocouErrado();
+        break;
+      }
+      seqJog[notaAtual] = 2;
+      notaAtual++;
+      delay(100);
+    }
+    else if (digitalRead(vrd) == LOW) {
+      tocarNota(MI, ledBt3, 50);
+      if (seq[notaAtual] != 3) {
+        tocouErrado();
+        break;
+      }
+      seqJog[notaAtual] = 3;
+      notaAtual++;
+      delay(100);
+    }
+    else if (digitalRead(amr) == LOW) {
+      tocarNota(FA, ledBt4, 50);
+      if (seq[notaAtual] != 4) {
+        tocouErrado();
+        break;
+      }
+      seqJog[notaAtual] = 4;
+      notaAtual++;
+      delay(100);
+    }
+  }
+
+  // Se completou a sequência atual
+  if (vidas > 0 && notaAtual == maxCompSeq) {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Acertou!");
+    
+    // Avança para o próximo nível
+    nivel++;
+    
+    // Define o tamanho da próxima sequência
+    switch(nivel) {
+      case 2: maxCompSeq = 7; break;
+      case 3: maxCompSeq = 9; break;
+      case 4: maxCompSeq = 12; break;
+      default: 
+        // Se completou todos os níveis, reinicia
+        lcd.setCursor(0, 1);
+        lcd.print("Musica completa!");
+        delay(2000);
+        nivel = 1;
+        maxCompSeq = 5;
+        telaInicio();
+        return;
+    }
+    
+    lcd.setCursor(0, 1);
+    lcd.print("Proximo nivel!");
+    digitalWrite(ledAcerto, HIGH);
+    delay(500);
+    digitalWrite(ledAcerto, LOW);
+    
+    // Prepara para a próxima rodada
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Nivel ");
+    lcd.print(nivel);
+    lcd.setCursor(0, 1);
+    lcd.print("Notas: ");
+    lcd.print(maxCompSeq);
+    delay(500);
+    
+    // Toca a nova sequência
+    tocar(menuPos);
+    
+    // Reinicia para o jogador repetir
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Repita a");
+    lcd.setCursor(0, 1);
+    lcd.print("sequencia!");
+    delay(250);
+    
+    // Reinicia a contagem
+    notaAtual = 0;
+    esperar();
+  }
+}
+
+void tocouErrado() {
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Errou!");
+  lcd.setCursor(0, 1);
+  lcd.print("Vidas: ");
+  lcd.print(vidas-1); // Mostra o novo valor de vidas
+  
+  // Acende LED de erro
+  digitalWrite(ledErro, HIGH);
+  vidas--;
+  
+  // Toca som de erro
+  tone(buzzer, 100, 500);
+  delay(500);
+  digitalWrite(ledErro, LOW);
+  
+  // Verifica se acabaram as vidas
+  if (vidas <= 0) {
+    gameOver();
+  } else {
+    // Se ainda tem vidas, prepara para tentar novamente
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Tente novamente!");
+    delay(500);
+    
+    // Toca a música novamente
+    tocar(menuPos);
+    
+    // Reinicia para o jogador repetir
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Repita a");
+    lcd.setCursor(0, 1);
+    lcd.print("sequencia!");
+    delay(250);
+    
+    // Reinicia a contagem
+    notaAtual = 0;
+    esperar();
+  }
+}
+
+bool verificar() {
+  for (int i = 0; i < 5; i++) {
+    if (seq[i] != seqJog[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+void telaInicio() {
+  lcd.clear();
+  
+  // Mostra as vidas no canto superior direito
+  lcd.setCursor(13, 0);
+  lcd.print("V:");
+  lcd.print(vidas);
+  
+  // Título do menu
+  lcd.setCursor(0, 0);
+  lcd.print("Selecione:");
+  
+  // Opções do menu na segunda linha
+  lcd.setCursor(0, 1);
+  for (int i = 1; i <= 5; i++) {  // Agora temos 5 opções
+    if (i == menuPos) {
+      lcd.print("[");  // Destaca a opção selecionada
+      lcd.print(i);
+      lcd.print("]");
+    } else {
+      lcd.print(" ");
+      lcd.print(i);
+      lcd.print(" ");
+    }
+    
+    // Espaço entre opções
+    if (i < 5) lcd.print("");
+  }
+}
+
+void gameOver() {
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("GAME OVER!");
+  lcd.setCursor(0, 1);
+  lcd.print("Tente novamente!");
+  
+  // Toca som de game over
+  for (int i = 0; i < 3; i++) {
+    tone(buzzer, 200, 200);
+    digitalWrite(ledErro, HIGH);
+    delay(300);
+    digitalWrite(ledErro, LOW);
+    delay(100);
+  }
+  
+  // Reseta as variáveis do jogo
+  vidas = 3;
+  nivel = 1;
+  maxCompSeq = 5;
+  
+  delay(2000); // Mostra a mensagem por 2 segundos
+  telaInicio(); // Volta ao menu
+}

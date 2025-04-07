@@ -24,4 +24,7 @@ PROJETO 1 - COMPUTAÇÃO EMBARCADA
 * Deverá emitir diferentes sons ou música para acertos,erros e nível conclúido
 
 * O LCD deverá exibir mensagens como "Sua vez!", "Errou!", "Acertou!", "Nível X",
-  "Numeros de vidas",etc.   
+  "Numeros de vidas",etc.
+
+
+  ![Image](https://github.com/user-attachments/assets/8e120541-d24b-44f7-8e8c-c31b6cc794b6)

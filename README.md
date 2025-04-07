@@ -28,3 +28,5 @@ PROJETO 1 - COMPUTAÇÃO EMBARCADA
 
 
   ![Image](https://github.com/user-attachments/assets/8e120541-d24b-44f7-8e8c-c31b6cc794b6)
+
+  https://github.com/user-attachments/assets/6d372e6c-6703-458e-98e1-fcc9a38598ef
